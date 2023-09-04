@@ -1,4 +1,4 @@
-![SignServer](.github/community-signserver.svg)
+![SignServer](.github/signserver-community.svg)
 
 # Helm Chart for SignServer Community
 
@@ -272,20 +272,20 @@ Note that the samples prefix properties with `WORKERGENID1` which always creates
 
 ## Parameters
 
-### SignServer Deployment Parameters TODO: Review list
+### SignServer Deployment Parameters
 
 | Name                                  | Description                                                                                            | Default |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------- |
 | signserver.useEphemeralH2Database     | If in-memory internal H2 database should be used                                                       | true    |
 | signserver.useH2Persistence           | If internal H2 database with persistence should be used. Requires existingH2PersistenceClaim to be set | false   |
 | signserver.existingH2PersistenceClaim | PersistentVolumeClaim that internal H2 database can use for data persistence                           |         |
-| signserver.importAppserverKeystore    | If an existing keystore should be used for TLS configurations when reverse proxy is not used           |         |
+| signserver.importAppserverKeystore    | If an existing keystore should be used for TLS configurations when reverse proxy is not used           | false   |
 | signserver.appserverKeystoreSecret    | Secret containing keystore for TLS configuration of SignServer application server                      |         |
-| signserver.importAppserverTruststore  | If an existing truststore should be used for TLS configurations when reverse proxy is not used         |         |
+| signserver.importAppserverTruststore  | If an existing truststore should be used for TLS configurations when reverse proxy is not used         | false   |
 | signserver.appserverTruststoreSecret  | Secret containing truststore for TLS configuration of SignServer application server                    |         |
-| signserver.importWorkerProperties     | If properties files should be used to configure SignServer                                             |         |
+| signserver.importWorkerProperties     | If properties files should be used to configure SignServer                                             | false   |
 | signserver.workerPropertiesSecret     | Secret containing properties files used for configuring SignServer at startup                          |         |
-| signserver.importKeystores            | If keystore files should be mounted into the SignServer container                                      |         |
+| signserver.importKeystores            | If keystore files should be mounted into the SignServer container                                      | false   |
 | signserver.keystoresSecret            | Secret containing keystore files that can be used by SignServer workers                                |         |
 | signserver.keystoresMountPath         | Mount path in the SignServer container for mounted keystore files                                      |         |
 | signserver.env                        | Environment variables to pass to container                                                             |         |
