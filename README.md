@@ -45,7 +45,7 @@ SignServer depends on an existing PKI for infrastructure certificates (client TL
 
 ### Add repo
 ```shell
-helm repo add keyfactor https://keyfactor.github.io/signserver-community-helm/
+helm repo add keyfactor https://keyfactor.github.io/ejbca-community-helm/
 ```
 
 ### Quick start
