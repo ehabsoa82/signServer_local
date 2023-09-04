@@ -319,8 +319,8 @@ Note that the samples prefix properties with `WORKERGENID1` which always creates
 | ----------------------------- | --------------------------------------------------------------------------------------------------------- | --------- |
 | services.directHttp.enabled   | If service for communcating directly with SignServer container should be enabled                          | true      |
 | services.directHttp.type      | Service type for communcating directly with SignServer container                                          | NodePort  |
-| services.directHttp.httpPort  | HTTP port for communcating directly with SignServer container                                             | 30080     |
-| services.directHttp.httpsPort | HTTPS port for communcating directly with SignServer container                                            | 30443     |
+| services.directHttp.httpPort  | HTTP port for communcating directly with SignServer container                                             | 31080     |
+| services.directHttp.httpsPort | HTTPS port for communcating directly with SignServer container                                            | 31443     |
 | services.proxyAJP.enabled     | If service for reverse proxy servers to communicate with SignServer container over AJP should be enabled  | false     |
 | services.proxyAJP.type        | Service type for proxy AJP communication                                                                  | ClusterIP |
 | services.proxyAJP.bindIP      | IP to bind for proxy AJP communication                                                                    | 0.0.0.0   |
