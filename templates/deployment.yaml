@@ -27,6 +27,10 @@ spec:
       serviceAccountName: {{ include "signserver-community-helm.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}  
+      {{- if .Values.signserver.initContainers }}
+      initContainers:
+        {{- toYaml .Values.signserver.initContainers | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -119,6 +123,12 @@ spec:
             - name: signserver-keystores-files
               mountPath: {{ .Values.signserver.keystoresMountPath }}
             {{- end }}
+            {{- if .Values.signserver.volumeMounts }}
+              {{- toYaml .Values.signserver.volumeMounts | nindent 12 }}
+            {{- end }}
+          {{- if .Values.signserver.sidecarContainers }}
+            {{- toYaml .Values.signserver.sidecarContainers | nindent 8 }}
+          {{- end }}
       volumes:
         {{- if .Values.signserver.useH2Persistence }}
         - name: signserver-h2-persistence
@@ -144,6 +154,9 @@ spec:
         - name: signserver-keystores-files
           secret:
             secretName: {{ .Values.signserver.keystoresSecret }}
+        {{- end }}
+        {{- if .Values.signserver.volumes }}
+          {{- toYaml .Values.signserver.volumes | nindent 8 }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

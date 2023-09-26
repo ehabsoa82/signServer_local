@@ -290,6 +290,10 @@ Note that the samples prefix properties with `WORKERGENID1` which always creates
 | signserver.keystoresMountPath         | Mount path in the SignServer container for mounted keystore files                                      |         |
 | signserver.env                        | Environment variables to pass to container                                                             |         |
 | signserver.envRaw                     | Environment variables to pass to container in Kubernetes YAML format                                   |         |
+| signserver.initContainers             | Extra init containers to be added to the deployment                                                    | []      |
+| signserver.sidecarContainers          | Extra sidecar containers to be added to the deployment                                                 | []      |
+| signserver.volumes                    | Extra volumes to be added to the deployment                                                            | []      |
+| signserver.volumeMounts               | Extra volume mounts to be added to the deployment                                                      | []      |
 
 ### SignServer Environment Variables
 
@@ -330,6 +334,8 @@ Note that the samples prefix properties with `WORKERGENID1` which always creates
 | services.proxyHttp.bindIP     | IP to bind for proxy HTTP communication                                                                   | 0.0.0.0   |
 | services.proxyHttp.httpPort   | Service port for proxy HTTP communication                                                                 | 8081      |
 | services.proxyHttp.httpsPort  | Service port for proxy HTTP communication that accepts SSL_CLIENT_CERT header                             | 8082      |
+| services.sidecarPorts         | Additional ports to expose in sidecar containers                                                          | []        |
+
 
 ### Ingress Parameters
 

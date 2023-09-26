@@ -22,6 +22,14 @@ signserver:
   #     secretKeyRef:
   #       name: signserverdbcredentials
   #       key: database_password
+  # Extra init containers to be added to the deployment
+  initContainers: []
+  # Extra sidecar containers to be added to the deployment
+  sidecarContainers: []
+  # Extra volumes to be added to the deployment
+  volumes: []
+  # Extra volume mounts to be added to the deployment
+  volumeMounts: []
 
 
 # Only one of the following services can be enabled at a time
@@ -42,6 +50,9 @@ services:
     bindIP: 0.0.0.0
     httpPort: 8081
     httpsPort: 8082
+  # Extra sidecar ports to be added to the service, optionally used when sidecarContainers
+  # are defined and need to expose ports
+  sidecarPorts: []
 
 # Requires proxyAJP or proxyHttp service to be enabled for adminweb access
 ingress:
