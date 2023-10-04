@@ -9,7 +9,7 @@ Welcome to SignServer – the Open Source Signing Software. Digitally sign docum
 There are two versions of SignServer:
 
 * **SignServer Community** (SignServer CE) - free and open source, OSI Certified Open Source Software, LGPL-licensed subset of SignServer Enterprise
-* **SignServer Enterprise** (SignServer EE) - developed and commercially supported by PrimeKey® Solutions
+* **SignServer Enterprise** (SignServer EE) - developed and commercially supported
 
 OSI Certified is a certification mark of the Open Source Initiative.
 
@@ -39,9 +39,9 @@ SignServer Community is licensed under the LGPL license, please see **[LICENSE](
 
 ## Getting started
 
-The **SignServer Community Helm Chart** boostraps **SignServer Community** on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+The **SignServer Community Helm Chart** bootstraps **SignServer Community** on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-SignServer depends on an existing PKI for infrastructure certificates (client TLS for administration and optionally server TLS) as well as for signer certificates for workers. [EJBCA](https://www.signserver.org) is an open source, enterprise grade, PKI software that is [easy to get started](https://www.youtube.com/keyfactorcommunity) with and [can be deployed in Kubernetes using Helm](https://github.com/Keyfactor/signserver-community-helm).
+SignServer depends on an existing PKI for infrastructure certificates (client TLS for administration and optionally server TLS) as well as for signer certificates for workers. [EJBCA](https://www.signserver.org) is an open-source, enterprise-grade, PKI software that is [easy to get started](https://www.youtube.com/keyfactorcommunity) with and [can be deployed in Kubernetes using Helm](https://github.com/Keyfactor/signserver-community-helm).
 
 ### Add repo
 ```shell
@@ -50,7 +50,7 @@ helm repo add keyfactor https://keyfactor.github.io/ejbca-community-helm/
 
 ### Quick start
 
-Deploying `signserver-community-helm` using default configurations will start SignServer with an ephemeral database and without the possibility to access the administration web interface. In order to be able to use SignServer, you should customize the deployment to allow admin web access and/or use pre-configured worker properties files.
+Deploying `signserver-community-helm` using default configurations will start SignServer with an ephemeral database and without the possibility of accessing the administration web interface. In order to be able to use SignServer, you should customize the deployment to allow admin web access and/or use pre-configured worker properties files.
 
 ### Custom deployment
 
@@ -65,12 +65,12 @@ helm install signserver keyfactor/signserver-community-helm --namespace signserv
 
 ## Example Custom Deployments
 
-This section contains examples for how to customize the deployment for common scenarios.
+This section contains examples of how to customize the deployment for common scenarios.
 
 ## Connecting SignServer to an external database
 
 All serious deployments of SignServer should use an external database for data persistence.
-SignServer supports Microsoft SQL Server, MariaDB/MySQL, PostgreSQL and Oracle databases. 
+SignServer supports Microsoft SQL Server, MariaDB/MySQL, PostgreSQL, and Oracle databases. 
 
 The following example shows modifications to the helm chart values file used to connect SignServer to a MariaDB database with server name `mariadb-server` and database name `signserverdb` using username `signserver` and password `foo123`:
 
@@ -83,7 +83,7 @@ signserver:
     DATABASE_PASSWORD: foo123
 ```
 
-This example connects SignServer to an PostgreSQL database and uses a Kubernetes secret for storing the database username and password:
+This example connects SignServer to a PostgreSQL database and uses a Kubernetes secret for storing the database username and password:
 
 ```yaml
 signserver:
@@ -111,7 +111,7 @@ Helm charts can be used to deploy a database in Kubernetes, for example the foll
 
 ### Configuring TLS termination in container for administrator access
 
-The SignServer container can be provided with custom keystore and truststore for TLS termination directly in the container. 
+The SignServer container can be provided with a custom keystore and truststore for TLS termination directly in the container. 
 
 Create Kubernetes secrets using the following commands:
 
@@ -137,7 +137,7 @@ signserver:
 
 ### Configuring SignServer to sit behind a reverse proxy 
 
-It is best practise to place SignServer behind a reverse proxy server that handles TLS termination and/or load balancing.
+It is best practice to place SignServer behind a reverse proxy server that handles TLS termination and/or load balancing.
 
 The following example shows how to configure a deployment to expose an AJP proxy port as a ClusterIP service:
 
@@ -231,7 +231,7 @@ signserver:
 
 SignServer can be fully configured using properties files. 
 
-The example below configures two workers, a crypto worker that connects to a keystore files located at `/mnt/external/signer_keystore.p12` and a PlainSigner that signs using the key signKey0001 from this keystore:
+The example below configures two workers, a crypto worker that connects to keystore files located at `/mnt/external/signer_keystore.p12` and a PlainSigner that signs using the key signKey0001 from this keystore:
 
 ```
 WORKER1.NAME=SignerCryptoToken
@@ -258,7 +258,7 @@ Create a secret from one or more text files with worker properties:
 kubectl create secret generic workers-secret --from-file=workers.properties=workers.properties
 ```
 
-Configure the chart to import worker properties at start up:
+Configure the chart to import worker properties at start-up:
 
 ```yaml
 signserver:
@@ -266,7 +266,7 @@ signserver:
   workerPropertiesSecret: workers-secret
 ```
 
-Sample properties files for different types of workers are availble in the [SignServer github repository](https://github.com/Keyfactor/signserver-ce/tree/main/signserver/doc/sample-configs).
+Sample properties files for different types of workers are available in the [SignServer GitHub repository](https://github.com/Keyfactor/signserver-ce/tree/main/signserver/doc/sample-configs).
 
 Note that the samples prefix properties with `WORKERGENID1` which always creates a new worker. In order to handle container restarts, exact worker ID should be used like in the example above. This way the worker is created if it does not already exist, otherwise properties are applied to the existing worker with that ID.
 
@@ -302,8 +302,8 @@ Note that the samples prefix properties with `WORKERGENID1` which always creates
 | signserver.env.DATABASE_JDBC_URL             | JDBC URL to external database                                                                                                                                                                              |         |
 | signserver.env.DATABASE_USER                 | The username part of the credentials to access the external database                                                                                                                                       |         |
 | signserver.env.DATABASE_PASSWORD             | The password part of the credentials to access the external database                                                                                                                                       |         |
-| signserver.env.DATABASE_USER_PRIVILEGED      | The username part of the credentials to access the external database is separate account is used for creating tables and schema changes                                                                    |         |
-| signserver.env.DATABASE_PASSWORD_PRIVILEGED  | The password part of the credentials to access the external database is separate account is used for creating tables and schema changes                                                                    |         |
+| signserver.env.DATABASE_USER_PRIVILEGED      | The username part of the credentials to access the external database if separate account is used for creating tables and schema changes                                                                    |         |
+| signserver.env.DATABASE_PASSWORD_PRIVILEGED  | The password part of the credentials to access the external database if separate account is used for creating tables and schema changes                                                                    |         |
 | signserver.env.LOG_LEVEL_APP                 | Application log level                                                                                                                                                                                      |         |
 | signserver.env.LOG_LEVEL_APP_WS_TRANSACTIONS | Application log level for WS transaction logging                                                                                                                                                           |         |
 | signserver.env.LOG_LEVEL_SERVER              | Application server log level for main system                                                                                                                                                               |         |
@@ -321,10 +321,10 @@ Note that the samples prefix properties with `WORKERGENID1` which always creates
 
 | Name                          | Description                                                                                               | Default   |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------- | --------- |
-| services.directHttp.enabled   | If service for communcating directly with SignServer container should be enabled                          | true      |
-| services.directHttp.type      | Service type for communcating directly with SignServer container                                          | NodePort  |
-| services.directHttp.httpPort  | HTTP port for communcating directly with SignServer container                                             | 31080     |
-| services.directHttp.httpsPort | HTTPS port for communcating directly with SignServer container                                            | 31443     |
+| services.directHttp.enabled   | If service for communicating directly with SignServer container should be enabled                          | true      |
+| services.directHttp.type      | Service type for communicating directly with SignServer container                                          | NodePort  |
+| services.directHttp.httpPort  | HTTP port for communicating directly with SignServer container                                             | 31080     |
+| services.directHttp.httpsPort | HTTPS port for communicating directly with SignServer container                                            | 31443     |
 | services.proxyAJP.enabled     | If service for reverse proxy servers to communicate with SignServer container over AJP should be enabled  | false     |
 | services.proxyAJP.type        | Service type for proxy AJP communication                                                                  | ClusterIP |
 | services.proxyAJP.bindIP      | IP to bind for proxy AJP communication                                                                    | 0.0.0.0   |
@@ -367,7 +367,7 @@ Note that the samples prefix properties with `WORKERGENID1` which always creates
 | resources                                     | Resource requests and limits                                                                                           | {}                      |
 | autoscaling.enabled                           | If autoscaling should be used                                                                                          | false                   |
 | autoscaling.minReplicas                       | Minimum number of replicas for autoscaling deployment                                                                  | 1                       |
-| autoscaling.maxReplicas                       | Maxmimum number of replicas for autoscaling deployment                                                                 | 5                       |
+| autoscaling.maxReplicas                       | Maximimum number of replicas for autoscaling deployment                                                                 | 5                       |
 | autoscaling.targetCPUUtilizationPercentage    | Target CPU utilization for autoscaling deployment                                                                      | 80                      |
 | autoscaling.targetMemoryUtilizationPercentage | Target memory utilization for autoscaling deployment                                                                   |                         |
 | nodeSelector                                  | Node labels for pod assignment                                                                                         | {}                      |
