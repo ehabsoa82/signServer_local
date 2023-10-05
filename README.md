@@ -35,13 +35,13 @@ SignServer Community is licensed under the LGPL license, please see **[LICENSE](
 
 - [Kubernetes](http://kubernetes.io) v1.19+
 - [Helm](https://helm.sh) v3+
-- [EJBCA](https://www.signserver.org), or another certificate authority for infrastructure and signer certificates.  
+- [EJBCA](https://www.ejbca.org), or another certificate authority for infrastructure and signer certificates.  
 
 ## Getting started
 
 The **SignServer Community Helm Chart** bootstraps **SignServer Community** on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
-SignServer depends on an existing PKI for infrastructure certificates (client TLS for administration and optionally server TLS) as well as for signer certificates for workers. [EJBCA](https://www.signserver.org) is an open-source, enterprise-grade, PKI software that is [easy to get started](https://www.youtube.com/keyfactorcommunity) with and [can be deployed in Kubernetes using Helm](https://github.com/Keyfactor/signserver-community-helm).
+SignServer depends on an existing PKI for infrastructure certificates (client TLS for administration and optionally server TLS) as well as for signer certificates for workers. [EJBCA](https://www.ejbca.org) is an open-source, enterprise-grade, PKI software that is [easy to get started](https://www.ejbca.org/use-cases/get-started-with-ejbca-pki/) with and [can be deployed in Kubernetes using Helm](https://github.com/Keyfactor/ejbca-community-helm).
 
 ### Add repo
 ```shell
