@@ -6,39 +6,80 @@ signserver:
   useEphemeralH2Database: true
   useH2Persistence: false
   #existingH2PersistenceClaim: "database-data-claim"
-  importAppserverKeystore: false
-  #appserverKeystoreSecret: keystore-secret
-  importAppserverTruststore: false
-  #appserverTruststoreSecret: truststore-secret
+  importAppserverKeystore: true
+  appserverKeystoreSecret: signserver-keystore
+  importAppserverTruststore: true
+  appserverTruststoreSecret: signserver-truststore
   importWorkerProperties: false
   #workerPropertiesSecret: workers-secret
   importKeystores: false
   #keystoresSecret: signer-keystores-secret
   #keystoresMountPath: /mnt/external
-  #env:
-  #envRaw:
-  #  - name: DATABASE_PASSWORD
-  #    valueFrom:
-  #     secretKeyRef:
-  #       name: signserverdbcredentials
-  #       key: database_password
+  env:
+    SIGNSERVER_ADMIN_TLS_CLIENT_AUTH: "true"
+    SIGNSERVER_ADMIN_TLS_CLIENT_CERT: "true"
+    SIGNSERVER_HEALTHCHECK_ENABLED: "true"
+    SIGNSERVER_ADMIN_AUTHTYPE: "CLIENTCERT"
+    SIGNSERVER_ADMIN_TRUSTSTORE_PATH: /opt/keyfactor/signserver/conf/truststore.jks
+    SIGNSERVER_ADMIN_TRUSTSTORE_PASSWORD: signserver
+    SIGNSERVER_KEYSTORE_PATH: /opt/keyfactor/secrets/external/tls/ks/server.jks
+    SIGNSERVER_KEYSTORE_PASSWORD: changeit
   # Extra init containers to be added to the deployment
   initContainers: []
   # Extra sidecar containers to be added to the deployment
   sidecarContainers: []
   # Extra volumes to be added to the deployment
-  volumes: []
+  volumes:
+    - name: admin-config
+      configMap:
+        name: signserver-admin-config
+    - name: truststore
+      configMap:
+        name: signserver-truststore
+    - name: keystore
+      secret:
+        secretName: signserver-keystore
   # Extra volume mounts to be added to the deployment
-  volumeMounts: []
+  volumeMounts:
+    - name: admin-config
+      mountPath: /opt/keyfactor/signserver/conf/admins.properties
+      subPath: authorizationdata.properties
+    - name: truststore
+      mountPath: /opt/keyfactor/signserver/conf/truststore.jks
+      subPath: truststore.jks
+    - name: keystore
+      mountPath: /opt/keyfactor/secrets/external/tls/ks
+      readOnly: true
+
+# Probe settings
+probes:
+  startup:
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    failureThreshold: 30
+  liveness:
+    periodSeconds: 10
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    httpGet:
+      path: /
+      port: http
+  readiness:
+    periodSeconds: 10
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    httpGet:
+      path: /
+      port: http
 
 
 # Only one of the following services can be enabled at a time
 services:
   directHttp:
     enabled: true
-    type: NodePort
-    httpPort: 31080
-    httpsPort: 31443
+    type: ClusterIP
+    httpPort: 8080
+    httpsPort: 8443
   proxyAJP:
     enabled: false
     type: ClusterIP
@@ -50,37 +91,40 @@ services:
     bindIP: 0.0.0.0
     httpPort: 8081
     httpsPort: 8082
-  # Extra sidecar ports to be added to the service, optionally used when sidecarContainers
-  # are defined and need to expose ports
+  # Extra sidecar ports to be added to the service
   sidecarPorts: []
 
-# Requires proxyAJP or proxyHttp service to be enabled for adminweb access
+# Configure Ingress for web access
 ingress:
-  enabled: false
+  enabled: true
   className: "nginx"
   annotations:
-    ## Do not redirect HTTP to HTTPS
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    ## Enable optional client certificate authentication
-    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
-    ## Secret containing trusted CA certificates
-    nginx.ingress.kubernetes.io/auth-tls-secret: "default/managementca-secret"
-    ## Pass client certificates to upstream server
-    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
-    ## Verification depth of the client certificates chain
-    #nginx.ingress.kubernetes.io/auth-tls-verify-depth: "1"
-    ## Configure sticky sessions if using more than one replica
-    #nginx.ingress.kubernetes.io/affinity: "cookie"
-    #nginx.ingress.kubernetes.io/session-cookie-name: "signserverCOOKIE"
-    #nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "route"
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
   hosts:
-    - host: "my.local.minikube"
+    - host: "signserver.local"
       paths:
-        - path: /signserver
+        - path: /
           pathType: Prefix
-  tls: []
 
 replicaCount: 1
+
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "200m"
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
 
 image:
   repository: keyfactor/signserver-ce

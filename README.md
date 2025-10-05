@@ -1,8 +1,6 @@
-![SignServer](.github/signserver-community.svg)
+# SignServer Community Helm Chart
 
-# Helm Chart for SignServer Community
-
-Helm chart for deploying SignServer in Kubernetes. Designed to be simple and flexible.
+This Helm chart deploys SignServer Community Edition with support for HTTPS and client certificate authentication.
 
 Welcome to SignServer – the Open Source Signing Software. Digitally sign documents, code, and timestamps while keeping your signature process and keys secure.
 
