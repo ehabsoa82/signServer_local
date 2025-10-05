@@ -1,8 +1,504 @@
-# SignServer Community Helm Chart
+# SignServer Community Helm Chart with SSL/TLS Support
 
-This Helm chart deploys SignServer Community Edition with support for HTTPS and client certificate authentication.
+This is a customized version of the SignServer Community Helm chart that adds support for HTTPS and client certificate authentication. It provides secure access to the SignServer admin interface through SSL/TLS and client certificates.
 
-Welcome to SignServer – the Open Source Signing Software. Digitally sign documents, code, and timestamps while keeping your signature process and keys secure.
+## Table of Contents
+1. [Prerequisites](#prerequisites)
+2. [Features](#features-added)
+3. [Directory Structure](#directory-structure)
+4. [Certificate Generation](#certificate-generation)
+   - [Server Certificate](#1-server-certificate)
+   - [Client Certificate](#2-client-admin-certificate)
+   - [Truststore](#3-truststore-configuration)
+5. [Configuration](#key-configuration-changes-in-valuesyaml)
+6. [Installation Steps](#installation-steps)
+7. [Making Updates](#making-updates)
+8. [Troubleshooting](#troubleshooting)
+9. [Security Notes](#security-notes)
+
+## Status Indicators
+Throughout this document, you'll see these status indicators:
+- 🟢 Ready/Success - Component is working correctly
+- 🟡 Warning/Caution - Requires attention or special consideration
+- 🔴 Error/Problem - Needs immediate attention
+- ℹ️ Info - Additional information or tips
+- 🔒 Security - Security-related information
+- 🔧 Configuration - Configuration details
+
+## Prerequisites
+
+### Required Software 🔧
+| Software | Version | Purpose |
+|----------|---------|----------|
+| Kubernetes | v1.19+ | Container orchestration platform |
+| Helm | v3+ | Package manager for Kubernetes |
+| kubectl | Latest | Kubernetes command-line tool |
+| Java keytool | JDK 11+ | Certificate generation and management |
+| OpenSSL | Latest | Certificate verification (optional) |
+
+### System Requirements 🔧
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| CPU | 2 cores | 4 cores |
+| Memory | 4GB RAM | 8GB RAM |
+| Storage | 10GB | 20GB |
+
+### Browser Requirements 🔧
+One of the following browsers with client certificate support:
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+### Knowledge Prerequisites ℹ️
+Basic understanding of:
+- Kubernetes concepts
+- SSL/TLS certificates
+- Helm charts
+- Command line operations
+
+## Features Added
+
+- HTTPS support using self-signed certificates
+- Client certificate authentication for admin interface
+- Organized SSL certificate management
+- Kubernetes secret management for certificates
+- Port forwarding support for local development
+
+## Directory Structure
+
+```
+.
+├── Chart.yaml           # Helm chart metadata
+├── values.yaml         # Customized configuration values
+├── templates/          # Helm chart templates
+│   ├── deployment.yaml
+│   ├── services.yaml
+│   ├── ingress.yaml
+│   └── server-keystore-config.yaml  # Added for SSL support
+├── config/
+│   └── ssl/           # SSL certificates and configuration
+│       ├── server/    # Server certificates
+│       │   ├── server.jks
+│       │   ├── server.pem
+│       │   └── server.storepasswd
+│       ├── client/    # Client certificates
+│       │   ├── admin.jks
+│       │   ├── admin.p12
+│       │   └── admin.cer
+│       └── truststore/ # Client certificate truststore
+│           └── truststore.jks
+└── create-keystore-secret.sh  # Script to create K8s secrets
+```
+
+## Certificate Generation
+
+### 1. Server Certificate
+```bash
+cd config/ssl/server
+keytool -genkeypair \
+  -alias signserver \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 3650 \
+  -keystore server.jks \
+  -dname "CN=signserver,O=SignServer,C=SE" \
+  -storepass changeit
+
+# Export certificate for browser import
+keytool -exportcert \
+  -alias signserver \
+  -keystore server.jks \
+  -file server.pem \
+  -rfc \
+  -storepass changeit
+```
+
+### 2. Client (Admin) Certificate
+```bash
+cd config/ssl/client
+keytool -genkeypair \
+  -alias admin \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 3650 \
+  -keystore admin.jks \
+  -dname "CN=admin,O=SignServer,C=SE" \
+  -storepass changeit
+
+# Export certificate
+keytool -exportcert \
+  -alias admin \
+  -keystore admin.jks \
+  -file admin.cer \
+  -storepass changeit
+
+# Create PKCS12 for browser import
+keytool -importkeystore \
+  -srckeystore admin.jks \
+  -destkeystore admin.p12 \
+  -srcstoretype JKS \
+  -deststoretype PKCS12 \
+  -srcstorepass changeit \
+  -deststorepass changeit \
+  -srcalias admin \
+  -destalias admin
+```
+
+### 3. Truststore Configuration
+```bash
+cd config/ssl/truststore
+keytool -import \
+  -alias admin \
+  -file ../client/admin.cer \
+  -keystore truststore.jks \
+  -storepass signserver \
+  -noprompt
+```
+
+## Key Configuration Changes in values.yaml 🔧
+
+### Configuration Overview
+The following table explains the key configuration changes made to `values.yaml`:
+
+| Category | Setting | Value | Purpose |
+|----------|---------|--------|---------|
+| Database | useEphemeralH2Database | true | Use in-memory database |
+| Database | useH2Persistence | false | No persistent storage |
+| Security | importAppserverKeystore | true | Enable SSL keystore |
+| Security | appserverKeystoreSecret | signserver-keystore | Store server certificate |
+| Security | importAppserverTruststore | true | Enable client auth |
+| Security | appserverTruststoreSecret | signserver-truststore | Store trusted certs |
+
+### Environment Variables
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| SIGNSERVER_ADMIN_TLS_CLIENT_AUTH | true | Enable client cert auth |
+| SIGNSERVER_ADMIN_TLS_CLIENT_CERT | true | Require client certs |
+| SIGNSERVER_HEALTHCHECK_ENABLED | true | Enable health checks |
+| SIGNSERVER_ADMIN_AUTHTYPE | CLIENTCERT | Use cert authentication |
+
+### Paths and Passwords
+| Setting | Value | Note |
+|---------|-------|------|
+| SIGNSERVER_ADMIN_TRUSTSTORE_PATH | /opt/keyfactor/signserver/conf/truststore.jks | 🔴 Don't change |
+| SIGNSERVER_ADMIN_TRUSTSTORE_PASSWORD | signserver | 🔴 Change in prod |
+| SIGNSERVER_KEYSTORE_PATH | /opt/keyfactor/secrets/external/tls/ks/server.jks | 🔴 Don't change |
+| SIGNSERVER_KEYSTORE_PASSWORD | changeit | 🔴 Change in prod |
+
+### Complete Configuration
+```yaml
+signserver:
+  useEphemeralH2Database: true    # ℹ️ In-memory database
+  useH2Persistence: false         # ℹ️ No persistence needed
+  importAppserverKeystore: true   # 🔒 Required for SSL
+  appserverKeystoreSecret: signserver-keystore  # 🔒 Server cert
+  importAppserverTruststore: true  # 🔒 Required for client auth
+  appserverTruststoreSecret: signserver-truststore  # 🔒 Client certs
+  env:
+    # Security Settings 🔒
+    SIGNSERVER_ADMIN_TLS_CLIENT_AUTH: "true"   # Enable client auth
+    SIGNSERVER_ADMIN_TLS_CLIENT_CERT: "true"   # Require client certs
+    SIGNSERVER_HEALTHCHECK_ENABLED: "true"     # Health monitoring
+    SIGNSERVER_ADMIN_AUTHTYPE: "CLIENTCERT"    # Auth mechanism
+    
+    # Paths and Credentials 🔐
+    SIGNSERVER_ADMIN_TRUSTSTORE_PATH: /opt/keyfactor/signserver/conf/truststore.jks
+    SIGNSERVER_ADMIN_TRUSTSTORE_PASSWORD: signserver  # 🔴 Change in prod
+    SIGNSERVER_KEYSTORE_PATH: /opt/keyfactor/secrets/external/tls/ks/server.jks
+    SIGNSERVER_KEYSTORE_PASSWORD: changeit  # 🔴 Change in prod
+```
+
+### Configuration Notes ℹ️
+- All paths are container-internal paths
+- Passwords should be changed in production
+- Security settings are mandatory for HTTPS
+- Database settings can be modified for persistence
+
+## Installation Steps
+
+### Quick Reference Guide 🔧
+| Step | Command | Expected Result |
+|------|---------|----------------|
+| Clone repo | `git clone https://github.com/ehabsoa82/signServer_local.git` | Repository downloaded |
+| Generate certs | Follow [Certificate Generation](#certificate-generation) | Certificates created |
+| Create secrets | `./create-keystore-secret.sh` | Secrets created in K8s |
+| Install chart | `helm upgrade --install signserver . -n signserver` | Chart deployed |
+| Port forward | `kubectl port-forward ...` | Service accessible |
+| Access UI | https://localhost:8443/signserver/adminweb/ | Admin UI loads |
+
+### Detailed Installation Steps
+
+1. Clone this repository and navigate to it:
+```bash
+# Download the repository
+git clone https://github.com/ehabsoa82/signServer_local.git
+cd signServer_local
+
+# Verify you're in the correct directory
+pwd  # Should show .../signServer_local
+ls   # Should show Chart.yaml, values.yaml, etc.
+```
+
+2. Generate all required certificates (if not already done):
+```bash
+# Create directory structure
+mkdir -p config/ssl/{server,client,truststore}
+
+# Generate certificates following the steps in the Certificate Generation section
+cd config/ssl
+# ... (follow certificate generation steps above)
+```
+
+3. Create required secrets:
+```bash
+./create-keystore-secret.sh
+```
+
+4. Install/upgrade the Helm chart:
+```bash
+# Create namespace if it doesn't exist
+kubectl create namespace signserver
+
+# Install/upgrade the chart
+helm upgrade --install signserver . -n signserver
+```
+
+5. Wait for the pod to be ready:
+```bash
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=signserver -n signserver --timeout=300s
+```
+
+6. Set up port forwarding:
+```bash
+# Run in background
+nohup kubectl port-forward -n signserver svc/signserver-signserver-community-helm 8443:8443 > port-forward.log 2>&1 &
+
+# Verify port forwarding is active
+ps aux | grep "port-forward" | grep "signserver"
+```
+
+7. Configure browser:
+   - Import server.pem as a trusted certificate authority:
+     * Chrome: Settings → Privacy and Security → Security → Manage Certificates → Authorities → Import
+     * Firefox: Preferences → Privacy & Security → View Certificates → Authorities → Import
+   - Import admin.p12 as a client certificate (password: changeit):
+     * Chrome: Settings → Privacy and Security → Security → Manage Certificates → Your Certificates → Import
+     * Firefox: Preferences → Privacy & Security → View Certificates → Your Certificates → Import
+   - Add to hosts file:
+     ```bash
+     # Add this line to /etc/hosts (requires sudo)
+     127.0.0.1 signserver.local
+     ```
+
+8. Access admin interface:
+   - URL: https://localhost:8443/signserver/adminweb/
+   - When prompted, select the admin certificate
+   - Verify that you see the admin interface without certificate errors
+
+9. Verify the installation:
+```bash
+# Check pod status
+kubectl get pods -n signserver
+
+# Check logs for any errors
+kubectl logs -n signserver -l app.kubernetes.io/name=signserver
+
+# Test HTTPS connection
+curl -k -v https://localhost:8443/signserver/adminweb/
+```
+
+## Making Updates
+
+### 1. Certificate Updates
+When certificates expire or need to be renewed:
+1. Generate new certificates following the steps above
+2. Update the secrets:
+```bash
+./create-keystore-secret.sh
+```
+3. Restart the pods:
+```bash
+kubectl rollout restart deployment -n signserver signserver-signserver-community-helm
+```
+
+### 2. Configuration Changes
+To modify SignServer configuration:
+1. Update values.yaml with new settings
+2. Upgrade the deployment:
+```bash
+helm upgrade signserver . -n signserver
+```
+
+### 3. Code Changes
+To make changes to the Helm chart:
+1. Make your changes
+2. Commit and push:
+```bash
+git add .
+git commit -m "Description of changes"
+git push
+```
+
+## Troubleshooting
+
+### Certificate Issues
+
+1. Check certificate validity and expiration:
+```bash
+# Check client certificate
+keytool -list -v -keystore config/ssl/client/admin.p12 -storepass changeit
+
+# Check server certificate
+keytool -list -v -keystore config/ssl/server/server.jks -storepass changeit
+
+# Verify certificate chain
+openssl verify -CAfile config/ssl/server/server.pem config/ssl/client/admin.cer
+```
+
+2. Verify truststore content and configuration:
+```bash
+# List trusted certificates
+keytool -list -v -keystore config/ssl/truststore/truststore.jks -storepass signserver
+
+# Verify certificate is in truststore
+keytool -list -v -keystore config/ssl/truststore/truststore.jks -storepass signserver | grep "admin"
+```
+
+3. Common certificate problems:
+   - Certificate not yet valid or expired
+   - Wrong certificate format
+   - Missing certificate chain
+   - Incorrect password
+   - Wrong certificate purpose (e.g., server cert as client cert)
+
+### Connection Issues
+
+1. Check pod and service status:
+```bash
+# Check pod status
+kubectl get pods -n signserver
+
+# Check service status
+kubectl get svc -n signserver
+
+# Check pod logs
+kubectl logs -n signserver -l app.kubernetes.io/name=signserver
+```
+
+2. Verify port forwarding:
+```bash
+# List port forwarding processes
+ps aux | grep "port-forward"
+
+# Test connection
+curl -k -v https://localhost:8443/signserver/adminweb/
+
+# Check if port is listening
+lsof -i :8443
+```
+
+3. Test SSL/TLS connection:
+```bash
+# Test with client certificate
+curl -k -v --cert config/ssl/client/admin.p12:changeit \
+  https://localhost:8443/signserver/adminweb/
+
+# Check server certificate
+openssl s_client -connect localhost:8443 -servername signserver.local
+```
+
+### Configuration Issues
+
+1. Check secret creation:
+```bash
+# List secrets
+kubectl get secrets -n signserver
+
+# Describe secrets
+kubectl describe secret signserver-keystore -n signserver
+kubectl describe secret signserver-truststore -n signserver
+```
+
+2. Verify environment variables:
+```bash
+# Get pod name
+POD=$(kubectl get pod -n signserver -l app.kubernetes.io/name=signserver -o jsonpath='{.items[0].metadata.name}')
+
+# Check environment variables
+kubectl exec -n signserver $POD -- env | grep SIGNSERVER
+```
+
+3. Check mounted volumes:
+```bash
+# Verify volume mounts
+kubectl describe pod -n signserver $POD
+
+# Check mounted files
+kubectl exec -n signserver $POD -- ls -l /opt/keyfactor/secrets/external/tls/ks/
+kubectl exec -n signserver $POD -- ls -l /opt/keyfactor/signserver/conf/
+```
+
+### Browser Issues
+
+1. Chrome:
+   - Open chrome://settings/certificates
+   - Verify both server and client certificates are properly imported
+   - Check certificate trust settings
+
+2. Firefox:
+   - Open about:preferences#privacy
+   - Check Security → Certificates
+   - Verify certificate trust settings
+
+3. Common browser problems:
+   - Certificate not imported correctly
+   - Wrong certificate store (personal vs authority)
+   - Browser not configured to send client certificates
+   - Certificate trust settings incorrect
+
+## Security Notes 🔒
+
+### Development vs Production 
+| Aspect | Development | Production |
+|--------|-------------|------------|
+| Certificates | Self-signed OK | Must use CA-signed |
+| Passwords | Default OK | Must be strong, unique |
+| Storage | Local files OK | Must use K8s secrets |
+| Access | Local access OK | Must use proper RBAC |
+
+### Security Checklist
+- [ ] Use CA-signed certificates in production
+- [ ] Configure strong passwords
+- [ ] Enable audit logging
+- [ ] Set up monitoring
+- [ ] Configure RBAC
+- [ ] Secure network policies
+- [ ] Regular certificate rotation
+- [ ] Backup management
+
+### Best Practices
+1. Certificate Management
+   - Rotate certificates every 90 days
+   - Use minimum 2048-bit RSA keys
+   - Keep private keys secured
+
+2. Access Control
+   - Use role-based access control (RBAC)
+   - Implement network policies
+   - Enable audit logging
+
+3. Monitoring
+   - Monitor certificate expiration
+   - Track failed login attempts
+   - Set up alerts for security events
+
+### Security Contacts
+- Report security issues: security@your-org.com
+- Emergency contact: +1-XXX-XXX-XXXX
+
+🔴 **WARNING**: The default certificates and passwords in this repository are for development only. 
+Never use them in a production environment!
 
 There are two versions of SignServer:
 
