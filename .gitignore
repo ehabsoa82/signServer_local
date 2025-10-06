@@ -8,17 +8,17 @@ Chart.lock
 .DS_Store
 
 # Certificates and keys
-config/ssl/**/*.jks
-config/ssl/**/*.p12
-config/ssl/**/*.pem
-config/ssl/**/*.cer
-config/ssl/**/*.key
-config/ssl/**/*.storepasswd
-config/ssl/**/*.keypasswd
+#config/ssl/**/*.jks
+#config/ssl/**/*.p12
+#config/ssl/**/*.pem
+#config/ssl/**/*.cer
+#config/ssl/**/*.key
+#config/ssl/**/*.storepasswd
+#config/ssl/**/*.keypasswd
 
 # Port forwarding logs
-port-forward.log
-nohup.out
+#port-forward.log
+#nohup.out
 
 # IDE
 .idea/
